@@ -1,0 +1,6 @@
+# hide your keys
+secrets.py
+
+# hide your test data
+patrons.csv
+test-file.csv
