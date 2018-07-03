@@ -17,11 +17,13 @@ class Patron(object):
         self.expirationDate = ''
 
 # Lists for storing patron records
+all_patrons = []
 patron_list = []
+non_dupes = []
+dupes = []
 post_batch = []
 
 # Submits patron records to the Sierra API
-# Attempting a batch POST method, but unsure if Sierra allows for it
 def sierraPOST():
     count = 1
     for i in patron_list:
@@ -41,6 +43,29 @@ def sierraPOST():
                 break
         print(count)
         count += 1
+
+# PUT request, does the actual updating
+# def update_patron():
+#     final_patron = patron_list[0]
+#     json_string = jsonpickle.dumps(final_patron, unpicklable=False)
+#     print(json_string)
+#     header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
+#     request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(final_patron.id), data=json_string, headers=header_text)
+#     print(request)
+
+def compare_lists():
+    for a in all_patrons:
+        # comparator = dict(a)
+        for b in patron_list:
+            # staging = jsonpickle.dumps(b, unpicklable=False)
+            # comparatee = dict(staging)
+            if a['barcodes'] == b['barcodes']:
+                b['id'] = a['id']
+                dupes.append(b)
+            else:
+                non_dupes.append(b)
+    print(dupes)
+    print(non_dupes)
 
 # Reads a file and stores patron info the "Patron" object.
 # Then pushes each "Patron" into the patron_list array 
@@ -63,10 +88,20 @@ def read_csv():
             new_patron.barcodes.append("24708351111")
             new_patron.patronType = 0
             new_patron.expirationDate = "2017-09-23"
-            patron_list.append(new_patron)
+            patron_list.append(new_patron.__dict__)
+
+def get_all_patrons():
+    get_header_text = {"Authorization": "Bearer " + active_patrons_token}
+    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=1&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers = get_header_text)
+    data = json.loads(get_request.text)
+    for i in data['entries']:
+        all_patrons.append(i)
+    print(len(all_patrons))
+    compare_lists()
 
 # Calls read_csv() function
 read_csv()
+
 
 # Still set for use with the Sierra sandbox, but contains both development & production urls
 # url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/token"
@@ -76,7 +111,6 @@ url = "https://sandbox.iii.com:443/iii/sierra-api/v5/token"
 header = {"Authorization": "Basic " + str(secrets.sandbox_token), "Content-Type": "application/x-www-form-urlencoded"}
 response = requests.post(url, headers=header)
 json_response = json.loads(response.text)
-print(json_response)
 # Create var to hold the response data
 active_patrons_token = json_response["access_token"]
 
@@ -87,4 +121,5 @@ active_patrons_token = json_response["access_token"]
 
 
 # Calls sierraPOST() function
-sierraPOST()
+# sierraPOST()
+get_all_patrons()
