@@ -26,51 +26,69 @@ post_batch = []
 # Submits patron records to the Sierra API
 def sierraPOST():
     count = 1
-    for i in patron_list:
+    for i in non_dupes:
         post_batch.append(i)
         if len(post_batch) == 100:
             json_string = jsonpickle.dumps(post_batch[0:], unpicklable=False)
             true_json = json_string[1:-1]
-            print(true_json)
+            # print(true_json)
             header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
             # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
             request = requests.post("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/", data=true_json, headers=header_text)
-            print(request)
+            print(request.text)
             post_batch[:] = []
             continue
-            if int(request.status_code) != 200:
+            if int(request.status_code) >= 400:
                 print("Batch POST failed")
+                print(request.text)
                 break
         print(count)
         count += 1
 
-# PUT request, does the actual updating
-# def update_patron():
-#     final_patron = patron_list[0]
-#     json_string = jsonpickle.dumps(final_patron, unpicklable=False)
-#     print(json_string)
-#     header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
-#     request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(final_patron.id), data=json_string, headers=header_text)
-#     print(request)
+# PUT request
+# Loops through list of duplicates
+def update_patron():
+    for c in dupes:
+        # stores id to be passed into the API
+        update_id = c['id']
+        # removes id from the dict since Sierra won't accept that field
+        c.pop('id', None)
+        json_string = jsonpickle.dumps(c, unpicklable=False)
+        # print(json_string)
+        header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
+        request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
+        if int(request.status_code) >= 400:
+                print("update failed")
+                print(request)
+                break
+        print(request)
 
+# runs comparison between retrieved patrons & entries from the csv
+# sorts by barcode
 def compare_lists():
-    for a in all_patrons:
-        # comparator = dict(a)
-        for b in patron_list:
-            # staging = jsonpickle.dumps(b, unpicklable=False)
-            # comparatee = dict(staging)
-            if a['barcodes'] == b['barcodes']:
-                b['id'] = a['id']
-                dupes.append(b)
-            else:
-                non_dupes.append(b)
-    print(dupes)
-    print(non_dupes)
+    for i in range(len(patron_list)):
+        if patron_list[i]['barcodes'] == all_patrons[i]['barcodes']:
+            patron_list[i]['id'] = all_patrons[i]['id']
+            dupes.append(patron_list[i])
+        else:
+            non_dupes.append(patron_list[i])
+    # for b in patron_list:
+    #     for a in all_patrons:
+    #         if a['barcodes'] == b['barcodes']:
+    #             # add id to be used for PUT request
+    #             b['id'] = a['id']
+    #             dupes.append(b)
+    #         else:
+    #             non_dupes.append(b)
+    print("Number of duplicates: " + str(len(dupes)))
+    print("Number of non-duplicates: " + str(len(non_dupes)))
+    sierraPOST()
+    update_patron()
 
 # Reads a file and stores patron info the "Patron" object.
 # Then pushes each "Patron" into the patron_list array 
 def read_csv():
-    with open("patrons.csv", "r", newline='') as file:
+    with open("patrons2.csv", "r", newline='') as file:
         has_header = csv.Sniffer().has_header(file.read(1024))
         file.seek(0)
         patron_data = csv.reader(file, delimiter=",")
@@ -90,13 +108,14 @@ def read_csv():
             new_patron.expirationDate = "2017-09-23"
             patron_list.append(new_patron.__dict__)
 
+# retrieves 
 def get_all_patrons():
     get_header_text = {"Authorization": "Bearer " + active_patrons_token}
-    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=1&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers = get_header_text)
+    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=15000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers = get_header_text)
     data = json.loads(get_request.text)
     for i in data['entries']:
         all_patrons.append(i)
-    print(len(all_patrons))
+    print("Number of Patrons retrieved: " + str(len(all_patrons)))
     compare_lists()
 
 # Calls read_csv() function
@@ -107,19 +126,12 @@ read_csv()
 # url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/token"
 url = "https://sandbox.iii.com:443/iii/sierra-api/v5/token"
 
-# Get the API key from secrets.py
+# Get the API key from secrets file
 header = {"Authorization": "Basic " + str(secrets.sandbox_token), "Content-Type": "application/x-www-form-urlencoded"}
 response = requests.post(url, headers=header)
 json_response = json.loads(response.text)
 # Create var to hold the response data
 active_patrons_token = json_response["access_token"]
 
-# Purely for testing purposes, will be removed when script is finalized
-# get_header_text = {"Authorization": "Bearer " + active_patrons_token}
-# get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=100&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers=get_header_text)
-# print(json.loads(get_request.text))
-
-
-# Calls sierraPOST() function
-# sierraPOST()
+# Calls get_all_patrons() to begin function chain
 get_all_patrons()
