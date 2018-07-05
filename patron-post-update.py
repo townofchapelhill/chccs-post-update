@@ -31,7 +31,6 @@ def sierraPOST():
         if len(post_batch) == 100:
             json_string = jsonpickle.dumps(post_batch[0:], unpicklable=False)
             true_json = json_string[1:-1]
-            # print(true_json)
             header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
             # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
             request = requests.post("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/", data=true_json, headers=header_text)
@@ -54,7 +53,6 @@ def update_patron():
         # removes id from the dict since Sierra won't accept that field
         c.pop('id', None)
         json_string = jsonpickle.dumps(c, unpicklable=False)
-        # print(json_string)
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
         if int(request.status_code) >= 400:
@@ -72,14 +70,6 @@ def compare_lists():
             dupes.append(patron_list[i])
         else:
             non_dupes.append(patron_list[i])
-    # for b in patron_list:
-    #     for a in all_patrons:
-    #         if a['barcodes'] == b['barcodes']:
-    #             # add id to be used for PUT request
-    #             b['id'] = a['id']
-    #             dupes.append(b)
-    #         else:
-    #             non_dupes.append(b)
     print("Number of duplicates: " + str(len(dupes)))
     print("Number of non-duplicates: " + str(len(non_dupes)))
     sierraPOST()
@@ -108,7 +98,7 @@ def read_csv():
             new_patron.expirationDate = "2017-09-23"
             patron_list.append(new_patron.__dict__)
 
-# retrieves 
+# retrieves all patron info for comparison against student info
 def get_all_patrons():
     get_header_text = {"Authorization": "Bearer " + active_patrons_token}
     get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=15000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers = get_header_text)
