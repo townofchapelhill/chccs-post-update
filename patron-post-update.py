@@ -3,11 +3,11 @@ import secrets
 import csv
 import json
 import jsonpickle
-import datetime
+from datetime import datetime
 
 # "Patron" object to store collected patron data
 class Patron(object):
-    def __init__(self, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None):
+    def __init__(self, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None, birthDate=None, addresses=None):
         self.names = []
         self.emails = []
         self.phones = []
@@ -15,6 +15,8 @@ class Patron(object):
         self.barcodes = []
         self.patronType = ''
         self.expirationDate = ''
+        self.birthDate = ''
+        self.addresses = []
 
 # Lists for storing patron records
 all_patrons = []
@@ -31,14 +33,14 @@ def sierraPOST():
         if len(post_batch) == 100:
             json_string = jsonpickle.dumps(post_batch[0:], unpicklable=False)
             true_json = json_string[1:-1]
-            # print(true_json)
+            print(true_json)
             header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
             # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
             request = requests.post("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/", data=true_json, headers=header_text)
             print(request.text)
             post_batch[:] = []
             continue
-            if int(request.status_code) >= 400:
+            if int(request.httpStatus) >= 400:
                 print("Batch POST failed")
                 print(request.text)
                 break
@@ -54,10 +56,9 @@ def update_patron():
         # removes id from the dict since Sierra won't accept that field
         c.pop('id', None)
         json_string = jsonpickle.dumps(c, unpicklable=False)
-        # print(json_string)
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
-        if int(request.status_code) >= 400:
+        if int(request.httpStatus) >= 400:
                 print("update failed")
                 print(request)
                 break
@@ -67,19 +68,14 @@ def update_patron():
 # sorts by barcode
 def compare_lists():
     for i in range(len(patron_list)):
+        print(patron_list[i])
+        print(all_patrons[i]['barcodes'])
         if patron_list[i]['barcodes'] == all_patrons[i]['barcodes']:
             patron_list[i]['id'] = all_patrons[i]['id']
             dupes.append(patron_list[i])
         else:
             non_dupes.append(patron_list[i])
-    # for b in patron_list:
-    #     for a in all_patrons:
-    #         if a['barcodes'] == b['barcodes']:
-    #             # add id to be used for PUT request
-    #             b['id'] = a['id']
-    #             dupes.append(b)
-    #         else:
-    #             non_dupes.append(b)
+            
     print("Number of duplicates: " + str(len(dupes)))
     print("Number of non-duplicates: " + str(len(non_dupes)))
     sierraPOST()
@@ -88,31 +84,41 @@ def compare_lists():
 # Reads a file and stores patron info the "Patron" object.
 # Then pushes each "Patron" into the patron_list array 
 def read_csv():
-    with open("patrons2.csv", "r", newline='') as file:
-        has_header = csv.Sniffer().has_header(file.read(1024))
+    with open("MOCK_DATA.csv", "r", newline='') as file:
+        has_header = next(file, None)
         file.seek(0)
         patron_data = csv.reader(file, delimiter=",")
         if has_header:
             next(patron_data)
         for row in patron_data:
             new_patron = Patron()
-            new_patron.emails.append(str(row[3]))
             new_patron.names.append(str(row[0]))
+            new_patron.names.append(str(row[1]))
+            new_patron.emails.append(str(row[2]))
+            new_patron.emails.append(str(row[5]))
+            new_patron.barcodes.append(str(row[3]))
+            new_patron.barcodes.append(str(row[4]))
             new_patron.phones.append({
-                "number": str(row[2]),
+                "number": str(row[6]),
                 "type": 't'
             })
-            new_patron.pin = "123456AB"
-            new_patron.barcodes.append("24708351111")
-            new_patron.patronType = 0
-            new_patron.expirationDate = "2017-09-23"
+            new_patron.birthDate = datetime.strptime(row[7], "%m/%d/%Y").strftime("%Y-%m-%d")
+            new_patron.expirationDate = datetime.strptime(row[8], "%m/%d/%Y").strftime("%Y-%m-%d")
+            new_patron.pin = str(row[9])
+            new_patron.addresses.append({
+                "lines": [str(row[10])],
+                "type": "a"
+            })
+            new_patron.patronType = 15
             patron_list.append(new_patron.__dict__)
 
-# retrieves 
+# retrieves all patron info for comparison against student info
 def get_all_patrons():
     get_header_text = {"Authorization": "Bearer " + active_patrons_token}
-    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=15000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers = get_header_text)
+    # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=202000&limit=10&fields=updatedDate,createdDate,deletedDate,deleted,suppressed,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields", headers=get_header_text)
+    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons/?limit=15000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers=get_header_text)
     data = json.loads(get_request.text)
+    print(data)
     for i in data['entries']:
         all_patrons.append(i)
     print("Number of Patrons retrieved: " + str(len(all_patrons)))
