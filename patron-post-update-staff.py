@@ -8,7 +8,7 @@ from datetime import datetime
 
 # "Patron" object to store collected patron data
 class Patron(object):
-    def __init__(self, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None, birthDate=None, addresses=None):
+    def __init__(self, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None, birthDate=None, addresses=None, rowNumber=None):
         self.names = []
         self.emails = []
         self.phones = []
@@ -18,6 +18,7 @@ class Patron(object):
         self.expirationDate = ''
         self.birthDate = ''
         self.addresses = []
+        self.rowNumber = ''
 
 # Lists for storing patron records
 all_patrons = []
@@ -27,40 +28,43 @@ dupes = []
 
 # Submits patron records to the Sierra API
 def sierraPOST():
+    log_file.write("Posting new patron records: \n")
     # active_patrons_token = get_token()
     for i in non_dupes:
+        identifier = i['rowNumber']
+        i.pop('rowNumber', None)
         json_string = jsonpickle.dumps(i, unpicklable=False)
         active_patrons_token = get_token()
-        print(active_patrons_token)
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
         request = requests.post("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
         print(request)
-        continue
-        if int(request.httpStatus) >= 400:
-            print("POST failed")
-            print(request.text)
-            break
+        if int(request.status_code) >= 400:
+            log_file.write("Failed at record: " + str(identifier) + " " + str(i['names']) + '\n' + str(request.text) + '\n')
+            log_file.write('\n')
+    log_file.write("\n")
 
 # PUT request
 # Loops through list of duplicates
 def update_patron():
-    # active_patrons_token = get_token()
+    log_file.write("Updating duplicate patron records: \n")
     for c in dupes:
         # stores id to be passed into the API
         update_id = c['id']
+        identifier = c['rowNumber']
         # removes id from the dict since Sierra won't accept that field
         c.pop('id', None)
+        c.pop('rowNumber', None)
         json_string = jsonpickle.dumps(c, unpicklable=False)
         active_patrons_token = get_token()
         print(active_patrons_token)
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
         # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
-        # if int(request.text) >= 400:
-        #         print("update failed")
-        #         print(request)
-        #         break
+        if int(request.status_code) >= 400:
+            log_file.write("Failed at record: " + str(identifier) + " " + str(i['names']) + '\n' + str(request.text) + '\n')
+            log_file.write('\n')
+        log_file.write("\n")
         print(request)
     update_patron()
 
@@ -77,8 +81,9 @@ def compare_lists():
         except:
             non_dupes.append(patron_list[i])
             
-    print("Number of duplicates: " + str(len(dupes)))
-    print("Number of non-duplicates: " + str(len(non_dupes)))
+    log_file.write("Number of duplicates: " + str(len(dupes)) + "\n")
+    log_file.write("Number of non-duplicates: " + str(len(non_dupes)) + '\n')
+    log_file.write("\n")
     sierraPOST()
 
 # Reads a file and stores patron info the "Patron" object.
@@ -88,6 +93,7 @@ def read_csv():
         has_header = next(file, None)
         file.seek(0)
         patron_data = csv.reader(file, delimiter=",")
+        row_number = 2
         if has_header:
             next(patron_data)
         for row in patron_data:
@@ -95,9 +101,6 @@ def read_csv():
             pin_number = "123456AB" # Birthdates may not be provided, will need workaround to generate PIN
             address = str(row[4]) + " " + str(row[5]) + ", " + str(row[6]) + " " + str(row[7])
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[0]))
-            print(first_last)
-            print(pin_number)
-            print(address)
             new_patron = Patron()
             new_patron.names.append(first_last)
             # new_patron.names.append(str(row[1]))
@@ -116,7 +119,9 @@ def read_csv():
                 "type": "a"
             })
             new_patron.patronType = 15
+            new_patron.rowNumber = row_number
             patron_list.append(new_patron.__dict__)
+            row_number += 1
 
 # retrieves all patron info for comparison against student info
 def get_all_patrons():
@@ -153,6 +158,8 @@ def get_token():
     # Create var to hold the response data
     active_patrons_token = json_response["access_token"]
     return active_patrons_token
+
+log_file = open('chccs-log-staff.txt', 'w')
 
 # Calls read_csv() function
 read_csv()
