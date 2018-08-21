@@ -28,60 +28,71 @@ dupes = []
 
 # Submits patron records to the Sierra API
 def sierraPOST():
-    log_file.write("Posting new patron records: \n")
-    # active_patrons_token = get_token()
+    
+    log_file.write("Posting new patron records..." + "\n")
+    log_file.write("\n")
+
     for i in non_dupes:
         identifier = i['rowNumber']
+        pinIdentifier = i['pin']
+        i.pop('id', None)
         i.pop('rowNumber', None)
         json_string = jsonpickle.dumps(i, unpicklable=False)
+        print(json_string)
         active_patrons_token = get_token()
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
         request = requests.post("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/", data=json_string, headers=header_text)
-        print(request)
+        print(request.status_code)
         if int(request.status_code) >= 400:
-            log_file.write("Failed at record: " + str(identifier) + " " + str(i['names']) + '\n' + str(request.text) + '\n')
-            log_file.write('\n')
-    log_file.write("\n")
+            log_file.write("Failed at record: " + str(identifier) + " " + str(i['names']) + " " + str(pinIdentifier) + '\n' + str(request.text) + '\n')
+    update_patron()
 
 # PUT request
 # Loops through list of duplicates
 def update_patron():
-    log_file.write("Updating duplicate patron records: \n")
+    
+    log_file.write("\n")
+    log_file.write("Updating duplicate patron records... " + "\n")
+    log_file.write("\n")
+
     for c in dupes:
         # stores id to be passed into the API
         update_id = c['id']
         identifier = c['rowNumber']
+        pinIdentifier = c['pin']
         # removes id from the dict since Sierra won't accept that field
         c.pop('id', None)
         c.pop('rowNumber', None)
         json_string = jsonpickle.dumps(c, unpicklable=False)
+        print(json_string)
         active_patrons_token = get_token()
-        print(active_patrons_token)
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
         request = requests.put("https://sandbox.iii.com:443/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
         # request = requests.post("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/" + str(update_id), data=json_string, headers=header_text)
+        print(request.status_code)
         if int(request.status_code) >= 400:
-            log_file.write("Failed at record: " + str(identifier) + " " + str(i['names']) + '\n' + str(request.text) + '\n')
-            log_file.write('\n')
-        log_file.write("\n")
-        print(request)
-    update_patron()
+            log_file.write("Failed at record: " + str(identifier) + " " + str(c['names']) + " " + str(pinIdentifier) +  '\n' + str(request.text) + '\n' + '\n')
 
 # runs comparison between retrieved patrons & entries from the csv
-# sorts by barcode
+# sorts by first/last name and birthdate
 def compare_lists():
-    for i in range(len(patron_list)):
-        try:
-            if patron_list[i]['names'][0] == all_patrons[i]['names'][0][0:-2]:
-                patron_list[i]['id'] = all_patrons[i]['id']
-                dupes.append(patron_list[i])
-            else:
-                non_dupes.append(patron_list[i])
-        except:
-            non_dupes.append(patron_list[i])
-            
+    for staff in patron_list:
+        non_duplicate = True
+        for db_patron in all_patrons:
+            # if student['names'][0] == db_patron['names'][0:-2]: (Production Conditional)
+            if staff['names'][0] == db_patron['names'][0]:
+                staff['id'] = db_patron['id']
+                non_duplicate = False
+                dupes.append(staff)
+                break
+        if non_duplicate == True:
+            non_dupes.append(staff)
+
+    # writes to log file with number of duplicates & non-duplicates
     log_file.write("Number of duplicates: " + str(len(dupes)) + "\n")
+    print("Number of non-duplicates: " + str(len(non_dupes)))
+    print("Number of duplicates: " + str(len(dupes)))
     log_file.write("Number of non-duplicates: " + str(len(non_dupes)) + '\n')
     log_file.write("\n")
     sierraPOST()
@@ -125,7 +136,7 @@ def read_csv():
 
 # retrieves all patron info for comparison against student info
 def get_all_patrons():
-    iterator = 0
+    iterator = 1672000
     active_patrons_token = get_token()
 
     # while True:
@@ -133,7 +144,6 @@ def get_all_patrons():
     # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=" + str(iterator) + "&limit=2000&fields=updatedDate,createdDate,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields&deleted=false", headers=get_header_text)
     get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons?offset=' + str(iterator) +  '&limit=2000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers=get_header_text)
     data = json.loads(get_request.text)
-    print(data)
     # try:
     for i in data['entries']:
         all_patrons.append(i)
