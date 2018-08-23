@@ -139,21 +139,21 @@ def get_all_patrons():
     iterator = 1672000
     active_patrons_token = get_token()
 
-    # while True:
-    get_header_text = {"Authorization": "Bearer " + active_patrons_token}
-    # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=" + str(iterator) + "&limit=2000&fields=updatedDate,createdDate,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields&deleted=false", headers=get_header_text)
-    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons?offset=' + str(iterator) +  '&limit=2000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers=get_header_text)
-    data = json.loads(get_request.text)
-    # try:
-    for i in data['entries']:
-        all_patrons.append(i)
-    # except:
-        # compare_lists()
-        # break
-    print("Number of Patrons retrieved: " + str(len(all_patrons)))
-        # iterator += 2000
-        # print(iterator)
-    compare_lists()
+    while True:
+        get_header_text = {"Authorization": "Bearer " + active_patrons_token}
+        # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=" + str(iterator) + "&limit=2000&fields=updatedDate,createdDate,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields&deleted=false", headers=get_header_text)
+        get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons?offset=' + str(iterator) +  '&limit=2000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate', headers=get_header_text)
+        data = json.loads(get_request.text)
+        try:
+            for i in data['entries']:
+                all_patrons.append(i)
+        except:
+            compare_lists()
+            break
+        print("Number of Patrons retrieved: " + str(len(all_patrons)))
+        iterator += 2000
+        print(iterator)
+    #compare_lists()
 
 
 def get_token():
