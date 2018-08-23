@@ -109,7 +109,7 @@ def read_csv():
             next(patron_data)
         for row in patron_data:
             first_last = str(row[3]) + ", " + str(row[2])
-            pin_number = re.sub('[^A-Za-z0-9]', '', str(row[4][0:6])) + "56AB" # string required for dev testing, removing for production
+            pin_number = str(row[4][0:2]) + "X" + str(row[4][3:5]) + "56AB"
             address = str(row[7]) + " " + str(row[8]) + ", " + str(row[9]) + " " + str(row[10])
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
             new_patron = Patron()
@@ -122,7 +122,7 @@ def read_csv():
                 "type": 't'
             })
             new_patron.birthDate = datetime.strptime(str(row[4]), "%m/%d/%Y").strftime("%Y-%m-%d")
-            new_patron.expirationDate = datetime.strptime("08/31/2019", "%m/%d/%Y").strftime("%Y-%m-%d")
+            new_patron.expirationDate = datetime.strptime("08/31/2021", "%m/%d/%Y").strftime("%Y-%m-%d")
             new_patron.pin = pin_number
             new_patron.addresses.append({
                 "lines": [address],
@@ -130,30 +130,30 @@ def read_csv():
             })
             new_patron.patronType = 15
             new_patron.rowNumber = row_number
-            if row[0] == "true":
-                patron_list.append(new_patron.__dict__)
+            # if row[0] == "true":
+            patron_list.append(new_patron.__dict__)
             row_number += 1
 
 # retrieves all patron info for comparison against student info
 def get_all_patrons():
-    iterator = 1672000
+    iterator = 1671000
     active_patrons_token = get_token()
 
-    # while True:
-    get_header_text = {"Authorization": "Bearer " + active_patrons_token}
-    # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=" + str(iterator) + "&limit=2000&fields=updatedDate,createdDate,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields&deleted=false", headers=get_header_text)
-    get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons?offset=' + str(iterator) +  '&limit=2000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate,birthDate', headers=get_header_text)
-    data = json.loads(get_request.text)
-    # try:
-    for i in data['entries']:
-        all_patrons.append(i)
-    # except:
-        # compare_lists()
-        # break
-    print("Number of Patrons retrieved: " + str(len(all_patrons)))
-        # iterator += 2000
-        # print(iterator)
-    compare_lists()
+    while True:
+        get_header_text = {"Authorization": "Bearer " + active_patrons_token}
+        # get_request = requests.get("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons?offset=" + str(iterator) + "&limit=2000&fields=updatedDate,createdDate,names,barcodes,expirationDate,birthDate,emails,patronType,patronCodes,homeLibraryCode,message,blockInfo,addresses,phones,moneyOwed,fixedFields,varFields&deleted=false", headers=get_header_text)
+        get_request = requests.get('https://sandbox.iii.com/iii/sierra-api/v5/patrons?offset=' + str(iterator) +  '&limit=2000&fields=emails,names,addresses,phones,barcodes,patronType,expirationDate,birthDate', headers=get_header_text)
+        data = json.loads(get_request.text)
+        try:
+            for i in data['entries']:
+                all_patrons.append(i)
+        except:
+            compare_lists()
+            break
+        print("Number of Patrons retrieved: " + str(len(all_patrons)))
+        iterator += 2000
+        print(iterator)
+    # compare_lists()
 
 
 def get_token():
