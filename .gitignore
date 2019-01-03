@@ -1,6 +1,8 @@
 # hide your keys
 secrets.py
 
+__pycache__
+
 # hide your test data
 patrons.csv
 test-file.csv
@@ -10,3 +12,7 @@ MOCK_DATA_staff.csv
 MOCK_DATA_students.csv
 chccs-log-staff.txt
 chccs-log-student.txt
+all_patrons.csv
+better_patrons.csv
+delete_patrons.csv
+update_patrons.csv
