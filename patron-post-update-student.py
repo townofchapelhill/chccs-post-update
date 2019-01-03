@@ -4,6 +4,8 @@ import csv
 import json
 import jsonpickle
 import re
+import os
+import sys
 from datetime import datetime
 
 # "Patron" object to store collected patron data
@@ -73,6 +75,7 @@ def update_patron():
         print(request.status_code)
         if int(request.status_code) >= 400:
             log_file.write("Failed at record: " + str(identifier) + " " + str(c['names']) + " " + str(pinIdentifier) +  '\n' + str(request.text) + '\n')
+    delete_data()
 
 # runs comparison between retrieved patrons & entries from the csv
 # sorts by first/last name and birthdate
@@ -81,11 +84,14 @@ def compare_lists():
         non_duplicate = True
         for db_patron in all_patrons:
             # if student['names'][0] == db_patron['names'][0:-2] and student['birthDate'] == db_patron['birthDate']: (Production Conditional)
-            if student['names'][0] == db_patron['names'][0] and student['birthDate'] == db_patron['birthDate']:
-                student['id'] = db_patron['id']
-                non_duplicate = False
-                dupes.append(student)
-                break
+            try:
+                if student['names'][0] == db_patron['names'][0] and student['birthDate'] == db_patron['birthDate']:
+                    student['id'] = db_patron['id']
+                    non_duplicate = False
+                    dupes.append(student)
+                    break
+            except:
+                continue
         if non_duplicate == True:
             non_dupes.append(student)
 
@@ -100,7 +106,7 @@ def compare_lists():
 # Reads a file and stores patron info in "Patron" object.
 # Then pushes each "Patron" into patron_list array 
 def read_csv():
-    with open("MOCK_DATA_students.csv", "r", newline='') as file:
+    with open("MOCK_DATA.csv", "r", newline='') as file:
         has_header = next(file, None)
         file.seek(0)
         row_number = 1
@@ -109,7 +115,7 @@ def read_csv():
             next(patron_data)
         for row in patron_data:
             first_last = str(row[3]) + ", " + str(row[2])
-            pin_number = str(row[4][0:2]) + "X" + str(row[4][3:5]) + "56AB"
+            pin_number = str(row[4][0:2]) + "x" + str(row[4][3:5]) + "56AB"
             address = str(row[7]) + " " + str(row[8]) + ", " + str(row[9]) + " " + str(row[10])
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
             new_patron = Patron()
@@ -130,8 +136,11 @@ def read_csv():
             })
             new_patron.patronType = 15
             new_patron.rowNumber = row_number
-            # if row[0] == "true":
-            patron_list.append(new_patron.__dict__)
+            # line 134 checks to see if opt in column (row[0]) = true
+            # if it does, it adds that entry to the list to be uploaded
+            # if not, it skips it
+            if row[0] == "true":
+                patron_list.append(new_patron.__dict__)
             row_number += 1
 
 # retrieves all patron info for comparison against student info
@@ -153,7 +162,6 @@ def get_all_patrons():
         print("Number of Patrons retrieved: " + str(len(all_patrons)))
         iterator += 2000
         print(iterator)
-    # compare_lists()
 
 
 def get_token():
@@ -168,6 +176,12 @@ def get_token():
     # Create var to hold the response data
     active_patrons_token = json_response["access_token"]
     return active_patrons_token
+
+def delete_data():
+    try:
+        os.remove("./MOCK_DATA.csv")
+    except:
+        sys.exit()
 
 log_file = open('chccs-log-student.txt', 'w')
 

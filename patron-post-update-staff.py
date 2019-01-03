@@ -109,7 +109,7 @@ def read_csv():
             next(patron_data)
         for row in patron_data:
             first_last = str(row[2]) + ", " + str(row[1])
-            pin_number = "123456AB" # Birthdates may not be provided, will need workaround to generate PIN
+            pin_number = row[0][6:8] + "x" + row[0][8:10] + "56AB"
             address = str(row[4]) + " " + str(row[5]) + ", " + str(row[6]) + " " + str(row[7])
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[0]))
             new_patron = Patron()
