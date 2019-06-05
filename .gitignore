@@ -1,9 +1,7 @@
-# hide your keys
 secrets.py
 
 __pycache__
 
-# hide your test data
 patrons.csv
 test-file.csv
 patrons2.csv
