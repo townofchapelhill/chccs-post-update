@@ -1,3 +1,6 @@
+# This script was created to perform database cleanup after the inital upload of CHCCS data
+# If the database needs to be cleaned again after the next upload then this script can help
+
 import secrets
 import csv
 import json
@@ -10,6 +13,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import requests
 
+# Constructor to store Patron data
 class Patron(object):
     def __init__(self, id=None, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None, birthDate=None, addresses=None):
         self.id = ''
@@ -23,6 +27,7 @@ class Patron(object):
         self.birthDate = ''
         self.addresses = []
     
+    # Hash method, makes comparison faster
     def __hash__(self):
         return hash(self.__key())
 
@@ -32,10 +37,14 @@ patron_list = []
 to_delete = []
 to_update = []
 
+# Function compares the entries of the patron list by calculating a ratio produced from fuzzywuzzy
+# Ratio was necessary to capture patron records that were the same person, but one record had a middle initial
+# Range of acceptable ratio is 93-96, reliably captures names that differ by 1 letter
 def narrow_search():
     count = 0
     for i in patron_list:
         name1 = i['names']
+        # Not all records have birthdays inputted, hence try/catch
         try:
             bDay1 = datetime.strptime(i['birthDate'], "%Y-%m-%d")
         except:
@@ -46,10 +55,16 @@ def narrow_search():
                 bDay2 = datetime.strptime(j['birthDate'], "%Y-%m-%d")
             except:
                 pass
+
+            # Produce ratio
             ratio = fuzz.ratio(name1, name2)
+
+            # Rules for comparison
             rules = [ratio >= 93,
                      ratio <= 96,
                      bDay1 == bDay2]
+            
+            # if match is found, exchange emails, phone numbers, & barcodes
             if all(rules):
                 count += 1
                 print("Found:" + str(count))
@@ -60,7 +75,10 @@ def narrow_search():
                         j['phones'] = j['phones'] + ", " + i['phones']
                     if j['barcodes'] != i['barcodes']:
                         j['barcodes']= j['barcodes'] + ", " + i['barcodes']
+
+                    # Place "j" iterators in update list
                     to_update.append(j)
+                    # Place "i" iterators in delete list
                     to_delete.append(i)
             else:
                 continue
@@ -97,7 +115,9 @@ def read_csv():
         print(len(patron_list))
     narrow_search()
 
+# write the CSV's of final lists
 def write_csv():
+    # This CSV will contain the records that will be updated with update.py
     with open("update_patrons.csv", "w+") as update_patrons:
         
         if os.stat('update_patrons.csv').st_size == 0:
@@ -108,6 +128,7 @@ def write_csv():
         for entry in to_update:
             csv_writer.writerow(entry)
     
+    # This CSV will contain the records that will be deleted with delete.py
     with open("delete_patrons.csv", "w+") as delete_patrons:
         
         if os.stat('delete_patrons.csv').st_size == 0:
@@ -118,7 +139,7 @@ def write_csv():
         for entry in to_delete:
             csv_writer.writerow(entry)
 
-
+# log file
 log_file = open('chccs-delete.txt', 'w')
 
 # Calls read_csv() function
