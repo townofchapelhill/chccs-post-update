@@ -1,16 +1,47 @@
-secrets.py
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
 
-__pycache__
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
 
-patrons.csv
-test-file.csv
-patrons2.csv
-MOCK_DATA.csv
-MOCK_DATA_staff.csv
-MOCK_DATA_students.csv
-chccs-log-staff.txt
-chccs-log-student.txt
-all_patrons.csv
-better_patrons.csv
-delete_patrons.csv
-update_patrons.csv
+# Logs, data, databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.csv
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Misc local files #
+####################
+temp*.py
+temp*.sh
+*secret*
+*credential*
+*.lock
