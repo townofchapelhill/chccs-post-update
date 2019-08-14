@@ -5,7 +5,7 @@ import json
 import jsonpickle
 import re
 import ast
-from datetime import datetime
+import datetime
 
 # "Patron" object to store collected patron data
 class Patron(object):
@@ -15,10 +15,14 @@ class Patron(object):
         self.phones = ''
         self.barcodes = ''
         self.patronType = ''
+        self.expirationDate = ''
 
 # List for storing patron records
 patron_list = []
 
+# calculate new expiration date
+expiration = datetime.date.today() + datetime.timedelta(years=3)
+expirationDate = expiration.strftime('%Y-%m-%d')
 
 # PUT request
 # Loops through list of duplicates
@@ -65,6 +69,7 @@ def read_csv():
             new_patron.barcodes = barcodes_array
             new_patron.phones = new_phones_array
             new_patron.patronType = 15
+            new_patron.expirationDate = expirationDate
             patron_list.append(new_patron.__dict__)
     update_patron()
 
