@@ -2,6 +2,13 @@
 # Inputs
 # barcode table - a csv loaded into a Dict
 # Student file - a csv from CHCCS with all student records
+#
+#    Enroll_Status
+#    0 = Active
+#    1 = Pre-Registered
+#    2 = Transferred Out of District
+#    3 = Graduated
+#    4 = Imported to PowerSchool as a Historical Record
 
 import csv
 
@@ -15,6 +22,7 @@ barcode_dict = {}
 updates = 0
 inserts = 0
 records = 0
+skipped = 0
 
 # load the dictionary
 with open("patron_barcodes.csv") as lookup_file:
@@ -32,6 +40,11 @@ with open("CHCCS_Students_upload.csv", encoding='utf-8') as student_file:
     students = csv.reader(student_file, delimiter=',')
     for student in students:
         records += 1
+        if int(student[len(student)-1]) > 1:
+            # skip record if last field (Enroll Status) not 'Active' or 'Pre-Registered'
+            print(f'record {student[1]} has status {student[len(student)-1]}')
+            skipped += 1
+            next
         try:
             matched = barcode_dict[student[1]]
             student[0] = matched
@@ -41,6 +54,6 @@ with open("CHCCS_Students_upload.csv", encoding='utf-8') as student_file:
             create_patron.writerow(student)
             inserts += 1
 
-print(f'Total read: {records}, New: {inserts}, Updates: {updates}')
+print(f'Total read: {records}, New: {inserts}, Updates: {updates}, Skipped: {skipped}')
 new_patrons.close()
 update_patrons.close()

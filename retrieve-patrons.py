@@ -36,7 +36,7 @@ patron_count = 0
 # today = datetime.date.today().strftime('%Y-%m-%d')
 active_patrons_token = get_token()
 barcode_match = re.compile(r'(;|\s)+')
-# barcode_format_error = re.compile(r'\D+')
+barcode_format_error = re.compile(r'\D+')
 barcode_note = re.compile(r'(\d+)(?=\D+)')
 
 update_patrons = open("all_patrons.csv", "w+")
@@ -73,7 +73,8 @@ while True:
                     found = re.split(barcode_match, barcode)
                     if found[0]: 
                         format_error = re.search(barcode_note, barcode)
-                        if format_error is None: 
+                        format_error_alpha = re.search(barcode_format_error, barcode)
+                        if (format_error is None) and (format_error_alpha is None): 
                           row = [found[0], i['id']]
                           csv_barcode.writerow(row)
                         else:
