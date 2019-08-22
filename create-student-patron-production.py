@@ -79,14 +79,14 @@ def read_csv():
              #log_file.write("Row %d is null\n" % row_number)
              continue
            #print(f'Patron Record: {row}')
-           first_last = str(row[3]) + ", " + str(row[2])
+           first_last = str(row[3]).upper() + ", " + str(row[2]).upper()
            pin_number = str(row[4][0:2]) + "x" + str(row[4][3:5])
            offset = 0
            if re.search(zipcode, str(row[10])):
-               address = str(row[7]) + " " + str(row[8]) + ", " + str(row[9]) + " " + str(row[10])
+               address = str(row[7]).upper() + "$ " + str(row[8]).upper() + " " + str(row[9]).upper() + " " + str(row[10])
            elif re.search(zipcode, str(row[11])):
                offset = 1
-               address = str(row[7]) + " " + str(row[8]) + ", " + str(row[9]) + " " + str(row[10]) + " " + str(row[11])
+               address = str(row[7]).upper() + " " + str(row[8]).upper() + " $ " + str(row[9]).upper() + " " + str(row[10]) + " " + str(row[11])
            else:
                log_file.write("Row format problem: %s\n" % row)
                continue
@@ -94,9 +94,13 @@ def read_csv():
            new_patron = Patron()
            new_patron.birthDate = datetime.strptime(str(row[4]), "%m/%d/%Y").strftime("%Y-%m-%d")
            new_patron.names.append(first_last)
-           new_patron.emails.append(str(row[11+offset]))
-           new_patron.emails.append(str(row[13+offset]))
-           new_patron.emails.append(str(row[14+offset]))
+           # only 1 email...
+           if row[11+offset]:
+               new_patron.emails.append(str(row[11+offset]))
+           elif row[13+offset]:
+               new_patron.emails.append(str(row[13+offset]))
+           else:
+               new_patron.emails.append(str(row[14+offset]))
            new_patron.barcodes.append(str(barcode))
            new_patron.phones.append({"number": str(row[12+offset]),"type": 't'})
            new_patron.expirationDate = expirationDate

@@ -63,7 +63,7 @@ def sierraPOST(patron):
 def read_csv():
     expiration = date.today() + timedelta(weeks=156)
     expirationDate = expiration.strftime('%Y-%m-%d')
-    with open("MOCK_DATA_staff.csv", "r", newline='') as file:
+    with open("/Users/dpcolar/Google Drive/TOCH/chccs-post-update/data/MOCK_DATA_staff.csv", "r", newline='') as file:
         has_header = next(file, None)
         file.seek(0)
         row_number = 1
@@ -74,9 +74,9 @@ def read_csv():
             if not row:
                 #log_file.write("Row %d is null\n" % row_number)
                 continue
-            first_last = str(row[3]) + ", " + str(row[2])
+            first_last = str(row[3]).upper() + ", " + str(row[2]).upper()
             pin_number = row[1][6:8] + "x" + row[1][8:10]
-            address = str(row[4]) + " " + str(row[5]) + ", " + str(row[6]) + " " + str(row[7])
+            address = str(row[4]).upper() + "$ " + str(row[5]).upper() + " " + str(row[6]).upper() + " " + str(row[7])
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
             new_patron = Patron()
             new_patron.names.append(first_last)
@@ -87,7 +87,8 @@ def read_csv():
             #    "type": 't'
             #})
             new_patron.phones.append({"number": str(row[8]),"type": 't'})
-            new_patron.phones.append({"number": str(row[9]),"type": 'p'})
+            if row[9]:
+                new_patron.phones.append({"number": str(row[9]),"type": 'p'})
             new_patron.birthDate = datetime.strptime("01/01/1980", "%m/%d/%Y").strftime("%Y-%m-%d")
             new_patron.expirationDate = expirationDate
             new_patron.pin = pin_number
@@ -114,8 +115,6 @@ def get_token():
 
 log_file = open('chccs-log-staff.txt', 'w')
 active_patrons_token = get_token()
-# Calls read_csv() function
+
 read_csv()
-# Calls get_all_patrons() to begin function chain
-#get_all_patrons(
 log_file.close()
