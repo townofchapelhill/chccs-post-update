@@ -59,28 +59,28 @@ while True:
 
     try:
         for i in data['entries']:
-            if (i['patronType'] == 15):
-                # select CHCCS only
-                if first_pass:
-                    fieldnames = i.keys()
-                    csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')
-                    csv_writer.writeheader()
-                    first_pass = False
+            # Only select CHCCS patrons
+            #if (i['patronType'] == 15):
+            if first_pass:
+                fieldnames = i.keys()
+                csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')
+                csv_writer.writeheader()
+                first_pass = False
                     
-                csv_writer.writerow(i)
-                patron_count += 1
-                for barcode in i['barcodes']: 
-                    found = re.split(barcode_match, barcode)
-                    if found[0]: 
-                        format_error = re.search(barcode_note, barcode)
-                        format_error_alpha = re.search(barcode_format_error, barcode)
-                        if (format_error is None) and (format_error_alpha is None): 
-                          row = [found[0], i['id']]
-                          csv_barcode.writerow(row)
-                        else:
-                            row = [i['id'], str(barcode), str(i['expirationDate'])]
-                            barcode_errors.writerow(row)
-                            #print(row)
+            csv_writer.writerow(i)
+            patron_count += 1
+            for barcode in i['barcodes']: 
+                found = re.split(barcode_match, barcode)
+                if found[0]: 
+                    format_error = re.search(barcode_note, barcode)
+                    format_error_alpha = re.search(barcode_format_error, barcode)
+                    if (format_error is None) and (format_error_alpha is None): 
+                      row = [found[0], i['id']]
+                      csv_barcode.writerow(row)
+                    else:
+                        row = [i['id'], str(barcode), str(i['expirationDate'])]
+                        barcode_errors.writerow(row)
+                        #print(row)
     except KeyError:
         break
     print(f'Total patrons retrieved: {patron_count} of {iterator + 2000}')

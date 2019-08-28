@@ -67,14 +67,15 @@ Last_Name
 DOB
 SchoolID
 Grade_Level
-Mailing_Street
+Mailing_Street (may repeat)
 Mailing_City
 Mailing_State
 Mailing_Zip
 S_NC_STUDENTDEMO.EMAIL_ADDRESS
 Home_Phone
-Guardian_Email
+Guardian_Email (may repeat)
 Enroll_Status
+S_NC_STUDENTDEMO.STUDENTSDCID (auto incremented for each new student)
 ```
 
 Enroll_Status
@@ -85,4 +86,4 @@ Enroll_Status
 3 = Graduated
 4 = Imported to PowerSchool as a Historical Record
 ```
-Only records with Enroll_status or 0 or 1 are processed
+Only records with Enroll_Status or 0 or 1 are processed
