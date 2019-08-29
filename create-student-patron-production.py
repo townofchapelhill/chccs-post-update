@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, date
 # "Patron" object to store collected patron data
 class Patron(object):
     def __init__(self, names=None, emails=None, phones=None, pin=None, barcodes=None, patronType=None, expirationDate=None, birthDate=None, addresses=None, rowNumber=None):
+
         self.names = []
         self.emails = []
         self.phones = []
@@ -65,6 +66,7 @@ def read_csv():
     expiration = date.today() + timedelta(weeks=156)
     expirationDate = expiration.strftime('%Y-%m-%d')
     zipcode = re.compile(r'\d{5}')
+
     print(f'Expiration Date: {expirationDate}')
     with open("mock-student.csv", mode='r') as file:
         has_header = next(file, None)
@@ -83,24 +85,26 @@ def read_csv():
            pin_number = str(row[4][0:2]) + "x" + str(row[4][3:5])
            offset = 0
            if re.search(zipcode, str(row[10])):
-               address = str(row[7]).upper() + "$ " + str(row[8]).upper() + " " + str(row[9]).upper() + " " + str(row[10])
+               address = str(row[7]).upper() + "$" + str(row[8]).upper() + " " + str(row[9]).upper() + " " + str(row[10])
            elif re.search(zipcode, str(row[11])):
                offset = 1
-               address = str(row[7]).upper() + " " + str(row[8]).upper() + " $ " + str(row[9]).upper() + " " + str(row[10]) + " " + str(row[11])
+               address = str(row[7]).upper() + " " + str(row[8]).upper() + "$" + str(row[9]).upper() + " " + str(row[10]) + " " + str(row[11])
            else:
                log_file.write("Row format problem: %s\n" % row)
                continue
+
            barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
            new_patron = Patron()
            new_patron.birthDate = datetime.strptime(str(row[4]), "%m/%d/%Y").strftime("%Y-%m-%d")
            new_patron.names.append(first_last)
-           # only 1 email...
-           if row[11+offset]:
-               new_patron.emails.append(str(row[11+offset]))
-           elif row[13+offset]:
-               new_patron.emails.append(str(row[13+offset]))
-           else:
-               new_patron.emails.append(str(row[14+offset]))
+           emails = []
+           if str(row[11+offset]):
+               emails.append(str(row[11+offset]))
+           if str(row[13+offset]):
+               emails.append(str(row[13+offset]))
+           if str(row[14+offset]):
+               emails.append(str(row[14+offset]))
+           new_patron.emails.append(",".join(emails))
            new_patron.barcodes.append(str(barcode))
            new_patron.phones.append({"number": str(row[12+offset]),"type": 't'})
            new_patron.expirationDate = expirationDate
@@ -111,15 +115,15 @@ def read_csv():
            # print(f'name:{new_patron.names},email:{new_patron.emails},barcode:{new_patron.barcodes},phone:{new_patron.phones},PIN:{new_patron.pin},DOB:{new_patron.birthDate},Addr:{new_patron.addresses}')
            sierraPOST(new_patron)
            patron_list.append(new_patron.__dict__)
-
            row_number += 1
+
  #       except IndexError:
  #         print(f'Key Error on patron record')
  #         next(patron_data)
 
 def get_token():
-    # url = "https://sandbox.iii.com/iii/sierra-api/v5/token"
 
+    # url = "https://sandbox.iii.com/iii/sierra-api/v5/token"
     url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v3/token"
     header = {"Authorization": "Basic " + str(secrets.sierra_api_2), "Content-Type": "application/x-www-form-urlencoded"}
     response = requests.post(url, headers=header)
