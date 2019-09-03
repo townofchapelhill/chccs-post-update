@@ -63,7 +63,7 @@ def sierraPOST(patron):
 def read_csv():
     expiration = date.today() + timedelta(weeks=156)
     expirationDate = expiration.strftime('%Y-%m-%d')
-    with open("/Users/dpcolar/Google Drive/TOCH/chccs-post-update/data/MOCK_DATA_staff.csv", "r", newline='') as file:
+    with open("new_staff_patrons.csv", "r", newline='') as file:
         has_header = next(file, None)
         file.seek(0)
         row_number = 1

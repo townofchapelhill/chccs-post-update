@@ -11,7 +11,7 @@ import json
 import jsonpickle
 import re
 import os
-# import datetime
+import datetime
 
 def get_token():
     url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/token"
@@ -39,6 +39,8 @@ barcode_match = re.compile(r'(;|\s)+')
 barcode_format_error = re.compile(r'\D+')
 barcode_note = re.compile(r'(\d+)(?=\D+)')
 
+compare_date = datetime.datetime.strptime('2022-08-01','%Y-%m-%d')
+
 update_patrons = open("all_patrons.csv", "w+")
 
 row = ['Barcode', 'Patron ID']
@@ -59,28 +61,35 @@ while True:
 
     try:
         for i in data['entries']:
-            # Only select CHCCS patrons
-            #if (i['patronType'] == 15):
-            if first_pass:
-                fieldnames = i.keys()
-                csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')
-                csv_writer.writeheader()
-                first_pass = False
+            # Select patrons with expiration dates before 2022-08-01
+            try:
+                if i['expirationDate']:
+                    patron_expiration = datetime.datetime.strptime(i['expirationDate'],'%Y-%m-%d')
+                else:
+                    continue
+            except KeyError:
+                continue
+            if (patron_expiration < compare_date):
+                if first_pass:
+                    fieldnames = i.keys()
+                    csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')
+                    csv_writer.writeheader()
+                    first_pass = False
                     
-            csv_writer.writerow(i)
-            patron_count += 1
-            for barcode in i['barcodes']: 
-                found = re.split(barcode_match, barcode)
-                if found[0]: 
-                    format_error = re.search(barcode_note, barcode)
-                    format_error_alpha = re.search(barcode_format_error, barcode)
-                    if (format_error is None) and (format_error_alpha is None): 
-                      row = [found[0], i['id']]
-                      csv_barcode.writerow(row)
-                    else:
-                        row = [i['id'], str(barcode), str(i['expirationDate'])]
-                        barcode_errors.writerow(row)
-                        #print(row)
+                csv_writer.writerow(i)
+                patron_count += 1
+                for barcode in i['barcodes']: 
+                    found = re.split(barcode_match, barcode)
+                    if found[0]: 
+                        format_error = re.search(barcode_note, barcode)
+                        format_error_alpha = re.search(barcode_format_error, barcode)
+                        if (format_error is None) and (format_error_alpha is None): 
+                          row = [found[0], i['id']]
+                          csv_barcode.writerow(row)
+                        else:
+                          row = [i['id'], str(barcode), str(i['expirationDate'])]
+                          barcode_errors.writerow(row)
+                          #print(row)
     except KeyError:
         break
     print(f'Total patrons retrieved: {patron_count} of {iterator + 2000}')

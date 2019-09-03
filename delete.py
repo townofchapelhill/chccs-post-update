@@ -10,8 +10,8 @@ from datetime import datetime
 def delete_patron(delete_id):
         global active_patrons_token
         header_text = {"Authorization": "Bearer " + active_patrons_token, "Content-Type": "application/json"}
-        #request = requests.delete("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/" + str(delete_id), data=json_string, headers=header_text)
-        request = requests.delete("https://sandbox.iii.com/iii/sierra-api/v5/patrons/" + str(delete_id), headers=header_text)
+        request = requests.delete("https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/patrons/" + str(delete_id), headers=header_text)
+        #request = requests.delete("https://sandbox.iii.com/iii/sierra-api/v5/patrons/" + str(delete_id), headers=header_text)
         #print(request.text)
         print(f'Record: {delete_id} Status: {request.status_code}')
         
@@ -29,9 +29,9 @@ def read_csv():
             delete_patron(row[0])
 
 def get_token():
-    url = "https://sandbox.iii.com/iii/sierra-api/v5/token"
-    # url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v3/token"
-    header = {"Authorization": "Basic " + str(secrets.sandbox_token), "Content-Type": "application/x-www-form-urlencoded"}
+    #url = "https://sandbox.iii.com/iii/sierra-api/v5/token"
+    url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v3/token"
+    header = {"Authorization": "Basic " + str(secrets.sierra_api_2), "Content-Type": "application/x-www-form-urlencoded"}
     response = requests.post(url, headers=header)
     json_response = json.loads(response.text)
     token = json_response["access_token"]

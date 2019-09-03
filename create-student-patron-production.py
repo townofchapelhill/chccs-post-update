@@ -66,9 +66,10 @@ def read_csv():
     expiration = date.today() + timedelta(weeks=156)
     expirationDate = expiration.strftime('%Y-%m-%d')
     zipcode = re.compile(r'\d{5}')
+    email_match = re.compile(r'[@]')
 
     print(f'Expiration Date: {expirationDate}')
-    with open("mock-student.csv", mode='r') as file:
+    with open("/Users/dpcolar/Google Drive/TOCH/chccs-post-update/data/mock-student.csv", mode='r') as file:
         has_header = next(file, None)
         file.seek(0)
         row_number = 1
@@ -92,19 +93,20 @@ def read_csv():
            else:
                log_file.write("Row format problem: %s\n" % row)
                continue
-
+           address = re.sub('[.]','',address)
            barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
            new_patron = Patron()
            new_patron.birthDate = datetime.strptime(str(row[4]), "%m/%d/%Y").strftime("%Y-%m-%d")
            new_patron.names.append(first_last)
-           emails = []
-           if str(row[11+offset]):
-               emails.append(str(row[11+offset]))
-           if str(row[13+offset]):
-               emails.append(str(row[13+offset]))
-           if str(row[14+offset]):
-               emails.append(str(row[14+offset]))
-           new_patron.emails.append(",".join(emails))
+           email = []
+           if re.search(email_match, str(row[11+offset])):
+               email.append(str(row[11+offset]))
+           if re.search(email_match, str(row[13+offset])):
+               email.append(str(row[13+offset]))
+           if re.search(email_match, str(row[14+offset])):
+               email.append(str(row[14+offset]))
+           if len(email):
+               new_patron.emails.append(",".join(email))
            new_patron.barcodes.append(str(barcode))
            new_patron.phones.append({"number": str(row[12+offset]),"type": 't'})
            new_patron.expirationDate = expirationDate
