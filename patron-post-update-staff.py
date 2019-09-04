@@ -52,7 +52,8 @@ def sierraPOST(patron):
             if found:
                 pid_end = re.search(sierraPID_end, request.text)
                 pid = request.text[found.regs[0][0]:pid_end.regs[0][1]-1]
-                log_file.write("Patron added: " + pid + '\n' + json_string + '\n')
+                log_file.write("Patron added: " + pid + ', ' + str(patron.barcodes) + '\n')
+                print(f'Added: {pid}, {patron.barcodes}')
         else:
            log_file.write("Failed at record: " + str(identifier) + '\n' + json_string + '\n')
     except:
@@ -76,16 +77,15 @@ def read_csv():
                 continue
             first_last = str(row[3]).upper() + ", " + str(row[2]).upper()
             pin_number = row[1][6:8] + "x" + row[1][8:10]
-            address = str(row[4]).upper() + "$ " + str(row[5]).upper() + " " + str(row[6]).upper() + " " + str(row[7])
+            if str(row[4]):
+                address = str(row[4]).upper() + "$" + str(row[5]).upper() + " " + str(row[6]).upper() + " " + str(row[7])
+            else:
+                address = ''
             barcode = re.sub('[^A-Za-z0-9]', '', str(row[1]))
             new_patron = Patron()
             new_patron.names.append(first_last)
             new_patron.emails.append(str(row[10]))
             new_patron.barcodes.append(barcode)
-            #new_patron.phones.append({
-            #    "number": "555-555-5555",
-            #    "type": 't'
-            #})
             new_patron.phones.append({"number": str(row[8]),"type": 't'})
             if row[9]:
                 new_patron.phones.append({"number": str(row[9]),"type": 'p'})

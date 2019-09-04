@@ -39,7 +39,7 @@ barcode_match = re.compile(r'(;|\s)+')
 barcode_format_error = re.compile(r'\D+')
 barcode_note = re.compile(r'(\d+)(?=\D+)')
 
-compare_date = datetime.datetime.strptime('2022-08-01','%Y-%m-%d')
+compare_date = datetime.datetime.strptime('2022-08-30','%Y-%m-%d')
 
 update_patrons = open("all_patrons.csv", "w+")
 
@@ -69,7 +69,8 @@ while True:
                     continue
             except KeyError:
                 continue
-            if (patron_expiration < compare_date):
+            #if (patron_expiration == compare_date):
+            if (True):
                 if first_pass:
                     fieldnames = i.keys()
                     csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')

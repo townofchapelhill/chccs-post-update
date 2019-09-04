@@ -11,7 +11,7 @@ A csv file (delete_patrons.csv) containing the Sierra PID
 ## retrieve-patrons.py
 Retrieve all patron records that are not marked for delete
 ### Input
-via the Sierra API - retrive patron record
+via the Sierra API - retrieve patron record
 
 Note: Ptype=15 are CHCCS students and staff
 
