@@ -17,7 +17,7 @@ def get_token():
     url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/token"
 
     # Get the API key from secrets file
-    header = {"Authorization": "Basic " + str(secrets.sierra_api_2), "Content-Type": "application/x-www-form-urlencoded"}
+    header = {"Authorization": "Basic " + str(secrets.sierra_api), "Content-Type": "application/x-www-form-urlencoded"}
     response = requests.post(url, headers=header)
     json_response = json.loads(response.text)
     # Create var to hold the response data
@@ -39,7 +39,9 @@ barcode_match = re.compile(r'(;|\s)+')
 barcode_format_error = re.compile(r'\D+')
 barcode_note = re.compile(r'(\d+)(?=\D+)')
 
-compare_date = datetime.datetime.strptime('2022-08-30','%Y-%m-%d')
+# compare_date = datetime.datetime.strptime('2022-08-30','%Y-%m-%d')
+# compare date is 2 years in the future
+compare_date = (datetime.datetime.today() + datetime.timedelta(weeks=104)).strftime('%Y-%m-%d')
 
 update_patrons = open("all_patrons.csv", "w+")
 
@@ -61,7 +63,6 @@ while True:
 
     try:
         for i in data['entries']:
-            # Select patrons with expiration dates before 2022-08-01
             try:
                 if i['expirationDate']:
                     patron_expiration = datetime.datetime.strptime(i['expirationDate'],'%Y-%m-%d')
@@ -69,8 +70,9 @@ while True:
                     continue
             except KeyError:
                 continue
-            #if (patron_expiration == compare_date):
-            if (True):
+            # Select patrons with expiration dates before the comparison date set above
+            # if (patron_expiration < compare_date):
+            if (True): # retrieve all (non-deleted) patron records
                 if first_pass:
                     fieldnames = i.keys()
                     csv_writer = csv.DictWriter(update_patrons, fieldnames=fieldnames, extrasaction='ignore', delimiter=',')
