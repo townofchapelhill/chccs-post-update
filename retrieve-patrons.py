@@ -5,24 +5,15 @@
 #     lookup table of Patron ID and Barcode 
 #  
 import requests
-import secrets
+import pathlib
 import csv
 import json
 import jsonpickle
 import re
 import os
 import datetime
-
-def get_token():
-    url = "https://catalog.chapelhillpubliclibrary.org/iii/sierra-api/v5/token"
-
-    # Get the API key from secrets file
-    header = {"Authorization": "Basic " + str(secrets.sierra_api), "Content-Type": "application/x-www-form-urlencoded"}
-    response = requests.post(url, headers=header)
-    json_response = json.loads(response.text)
-    # Create var to hold the response data
-    active_patrons_token = json_response["access_token"]
-    return active_patrons_token
+import secrets, filename_secrets
+import sierra_util
 
 # Dicts for storing patron records and barcodes
 all_patrons = []
@@ -34,7 +25,7 @@ iterator = 0
 first_pass = True
 patron_count = 0
 # today = datetime.date.today().strftime('%Y-%m-%d')
-active_patrons_token = get_token()
+active_patrons_token = sierra_util.get_token()
 barcode_match = re.compile(r'(;|\s)+')
 barcode_format_error = re.compile(r'\D+')
 barcode_note = re.compile(r'(\d+)(?=\D+)')
@@ -42,16 +33,18 @@ barcode_note = re.compile(r'(\d+)(?=\D+)')
 # compare_date = datetime.datetime.strptime('2022-08-30','%Y-%m-%d')
 # compare date is 2 years in the future
 compare_date = (datetime.datetime.today() + datetime.timedelta(weeks=104)).strftime('%Y-%m-%d')
-
-update_patrons = open("all_patrons.csv", "w+")
+allpatronsFile = pathlib.Path(filename_secrets.productionStaging).joinpath("all_patrons.csv")
+update_patrons = open(allpatronsFile, "w+")
 
 row = ['Barcode', 'Patron ID']
-patron_barcodes = open("patron_barcodes.csv", "w+")
+patronbarcodesFile = pathlib.Path(filename_secrets.productionStaging).joinpath("patron_barcodes.csv")
+patron_barcodes = open(patronbarcodesFile, "w+")
 csv_barcode = csv.writer(patron_barcodes)
 csv_barcode.writerow(row)
 
 row = ['Patron ID', 'Barcode', 'Expiration Date']
-barcode_error = open("barcode_errors.csv", "w+")
+barcodeerrorsFile = pathlib.Path(filename_secrets.productionStaging).joinpath("barcode_errors.csv")
+barcode_error = open(barcodeerrorsFile, "w+")
 barcode_errors = csv.writer(barcode_error)
 barcode_errors.writerow(row)
 
@@ -81,7 +74,9 @@ while True:
                     
                 csv_writer.writerow(i)
                 patron_count += 1
-                for barcode in i['barcodes']: 
+                for barcode in i['barcodes']:
+                    # remove whitespace 
+                    barcode = barcode.strip()
                     found = re.split(barcode_match, barcode)
                     if found[0]: 
                         format_error = re.search(barcode_note, barcode)
