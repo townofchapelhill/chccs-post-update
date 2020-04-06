@@ -20,16 +20,17 @@ The goal of this process is to pre-populate staff and students into Sierra from 
 5) Share the barcode_errors file with Tracy, Christie, Tim for cleanup
 6) move the patron_barcodes file to town\chccs-library
 7) unzip the CHCCS data files
-8) run student-match.py and staff-match.py
-9) Output Files
+8) run student-match.py and staff-match.\
+9) 
+10) Output Files
    1)  update_staff_patrons.csv - barcode matched patrons which need patron database expiration date updated
    2)  new_staff_patrons.csv - no barcode match - insert into patron database as a new record
    3)  update_patrons.csv - student barcode matched patrons which need patron database expiration date updated
    4)  new_patrons.csv - no barcode match - insert into patron database as a new student record
-10) run patron-post-update-staff.py and patron-post-update-student.py
-11) run create-student-patron-production.py
-12) create staff records by running (?)
-13) securely delete all files generated during this process 
+11) run patron-post-update-staff.py and patron-post-update-student.py
+12) run create-student-patron-production.py
+13) create staff records by running (?)
+14) securely delete all files generated during this process 
 ### Data Source
 - CHCCS data feed
 - Sierra patron extractions
