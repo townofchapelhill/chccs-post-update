@@ -1,20 +1,22 @@
 # CHCCS Patron Process runbook
 
-## A comprehensive run book for processing the CHCCS Powerschool data feed into Sierra
+## A comprehensive run book for processing CHCCS Powerschool data into Sierra
 
 ### Goal 
 Load new patron records and update the expiration of existing records in Sierra for CHCCS students and staff.
 
 ### Purpose 
-CHPL provides services, materials, and access to electronic resources to all CHCCS staff and students. The goal is to pre-populate all staff and students into Sierra from CHCCS data sources.
+CHPL provides services, materials, and access to electronic resources to CHCCS staff and students. 
+
+The goal of this process is to pre-populate staff and students into Sierra from CHCCS data sources.
 ### Methodology 
-1) CHCCS provides a data dump of Powerschool records via sFTP to the ToCH.
+1) CHCCS provides a data dump of Powerschool records via sFTP to ToCH.
 2) Data is held in an encrypted zip file on town\chccs-library
 3) On a workstation, run retrieve-patrons.py
 4) Output Files
    1) barcode_errors.csv - contains malformed barcodes and non-barcode info in the barcode field, patron ID, and expiration date
    2) patron_barcodes.csv - contains a list of all barcodes and corresponding patron ID for non-deleted patrons. 
-   3) Relationship is Patron ID:Barcode -> 1:many
+   3) Relationship for Patron ID:Barcode -> 1:many
 5) Share the barcode_errors file with Tracy, Christie, Tim for cleanup
 6) move the patron_barcodes file to town\chccs-library
 7) unzip the CHCCS data files
